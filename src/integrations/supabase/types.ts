@@ -289,6 +289,24 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       treatments: {
         Row: {
           active: boolean

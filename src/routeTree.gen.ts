@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as ApiPublicHooksSheetsSyncRouteImport } from './routes/api/public/hooks/sheets-sync'
 
 const PatientRoute = PatientRouteImport.update({
   id: '/patient',
@@ -46,6 +47,12 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicHooksSheetsSyncRoute =
+  ApiPublicHooksSheetsSyncRouteImport.update({
+    id: '/api/public/hooks/sheets-sync',
+    path: '/api/public/hooks/sheets-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/patient': typeof PatientRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/hooks/sheets-sync': typeof ApiPublicHooksSheetsSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,6 +69,7 @@ export interface FileRoutesByTo {
   '/patient': typeof PatientRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/hooks/sheets-sync': typeof ApiPublicHooksSheetsSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,6 +79,7 @@ export interface FileRoutesById {
   '/patient': typeof PatientRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/hooks/sheets-sync': typeof ApiPublicHooksSheetsSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,8 +90,15 @@ export interface FileRouteTypes {
     | '/patient'
     | '/admin/dashboard'
     | '/admin/'
+    | '/api/public/hooks/sheets-sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/patient' | '/admin/dashboard' | '/admin'
+  to:
+    | '/'
+    | '/auth'
+    | '/patient'
+    | '/admin/dashboard'
+    | '/admin'
+    | '/api/public/hooks/sheets-sync'
   id:
     | '__root__'
     | '/'
@@ -90,6 +107,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/admin/dashboard'
     | '/admin/'
+    | '/api/public/hooks/sheets-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   PatientRoute: typeof PatientRoute
+  ApiPublicHooksSheetsSyncRoute: typeof ApiPublicHooksSheetsSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -143,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/hooks/sheets-sync': {
+      id: '/api/public/hooks/sheets-sync'
+      path: '/api/public/hooks/sheets-sync'
+      fullPath: '/api/public/hooks/sheets-sync'
+      preLoaderRoute: typeof ApiPublicHooksSheetsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -163,6 +189,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   PatientRoute: PatientRoute,
+  ApiPublicHooksSheetsSyncRoute: ApiPublicHooksSheetsSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

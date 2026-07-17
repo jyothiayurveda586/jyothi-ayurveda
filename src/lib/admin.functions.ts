@@ -423,3 +423,37 @@ export const publicGetBookedSlots = createServerFn({ method: "POST" })
       .neq("status", "cancelled");
     return (rows ?? []).map((r: any) => r.appointment_time as string);
   });
+
+// ---- Google Sheets sync bootstrap / status ----
+export const adminSheetsSyncStatus = createServerFn({ method: "GET" })
+  .middleware([attachAdminToken])
+  .handler(async () => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("sync_config")
+      .select("key, value")
+      .in("key", ["sheets_sync_secret", "sheets_backup_spreadsheet_id", "sheets_sync_url"]);
+    const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+    return {
+      secretConfigured: !!(map["sheets_sync_secret"] && map["sheets_sync_secret"].length > 0),
+      webhookUrl: map["sheets_sync_url"] ?? null,
+      spreadsheetId: map["sheets_backup_spreadsheet_id"] ?? null,
+      spreadsheetUrl: map["sheets_backup_spreadsheet_id"]
+        ? `https://docs.google.com/spreadsheets/d/${map["sheets_backup_spreadsheet_id"]}`
+        : null,
+    };
+  });
+
+export const adminSheetsSyncInit = createServerFn({ method: "POST" })
+  .middleware([attachAdminToken])
+  .handler(async () => {
+    await requireAdmin();
+    const secret = process.env.SHEETS_SYNC_SECRET;
+    if (!secret) throw new Error("SHEETS_SYNC_SECRET is not set on the server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("sync_config")
+      .upsert({ key: "sheets_sync_secret", value: secret, updated_at: new Date().toISOString() });
+    return { ok: true };
+  });

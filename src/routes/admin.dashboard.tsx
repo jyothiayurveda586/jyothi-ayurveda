@@ -12,6 +12,7 @@ import {
   adminCreateUploadUrl, adminGetMediaUrl,
   adminListTable, adminExportAll,
   adminGetStats,
+  adminSheetsSyncStatus, adminSheetsSyncInit,
 } from "@/lib/admin.functions";
 import { clearAdminToken, getAdminToken } from "@/lib/admin-token";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +71,7 @@ function AdminDashboard() {
             <TabsTrigger value="treatments">Treatments</TabsTrigger>
             <TabsTrigger value="hospital">Hospital Info</TabsTrigger>
             <TabsTrigger value="database">Database</TabsTrigger>
+            <TabsTrigger value="backup">Sheets Backup</TabsTrigger>
             <TabsTrigger value="settings">Password</TabsTrigger>
           </TabsList>
           <TabsContent value="op"><OpRegisterTab /></TabsContent>
@@ -79,6 +81,7 @@ function AdminDashboard() {
           <TabsContent value="treatments"><TreatmentsTab /></TabsContent>
           <TabsContent value="hospital"><HospitalTab /></TabsContent>
           <TabsContent value="database"><DatabaseTab /></TabsContent>
+          <TabsContent value="backup"><SheetsBackupTab /></TabsContent>
           <TabsContent value="settings"><PasswordTab /></TabsContent>
         </Tabs>
       </main>
@@ -946,6 +949,68 @@ function StatsTab() {
             ))}
           </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Google Sheets Backup ---------- */
+function SheetsBackupTab() {
+  const status = useServerFn(adminSheetsSyncStatus);
+  const init = useServerFn(adminSheetsSyncInit);
+  const { data, refetch, isLoading } = useQuery({
+    queryKey: ["sheets-sync-status"],
+    queryFn: () => status(),
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (data && !data.secretConfigured) {
+      init().then(() => refetch()).catch(() => {});
+    }
+  }, [data?.secretConfigured]);
+
+  const doInit = async () => {
+    setBusy(true);
+    try {
+      await init();
+      await refetch();
+      toast.success("Sync configured");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>Google Sheets Backup</CardTitle></CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <p className="text-muted-foreground">
+          Every insert, update, and delete on doctors, treatments, appointments,
+          OP register, and hospital settings is mirrored into a Google Sheet on
+          your connected account. The spreadsheet is created automatically on the
+          first change after setup.
+        </p>
+        {isLoading ? <p>Loading…</p> : (
+          <div className="space-y-2">
+            <div>Webhook: <span className="font-mono text-xs break-all">{data?.webhookUrl ?? "—"}</span></div>
+            <div>
+              Sync secret: {data?.secretConfigured
+                ? <Badge>Configured</Badge>
+                : <Badge variant="destructive">Not configured</Badge>}
+            </div>
+            <div>
+              Spreadsheet: {data?.spreadsheetUrl ? (
+                <a className="text-primary underline" href={data.spreadsheetUrl} target="_blank" rel="noreferrer">
+                  Open in Google Sheets
+                </a>
+              ) : <span className="text-muted-foreground">Will be created on first change</span>}
+            </div>
+          </div>
+        )}
+        <Button onClick={doInit} disabled={busy}>
+          {busy ? "Working…" : "Re-configure sync"}
+        </Button>
       </CardContent>
     </Card>
   );
