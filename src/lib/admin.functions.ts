@@ -457,3 +457,39 @@ export const adminSheetsSyncInit = createServerFn({ method: "POST" })
       .upsert({ key: "sheets_sync_secret", value: secret, updated_at: new Date().toISOString() });
     return { ok: true };
   });
+
+const BACKUP_TABLES = [
+  "doctors", "treatments", "appointments",
+  "op_register", "hospital_settings", "profiles",
+] as const;
+
+export const adminSheetsBackfill = createServerFn({ method: "POST" })
+  .middleware([attachAdminToken])
+  .handler(async () => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cfg } = await supabaseAdmin
+      .from("sync_config")
+      .select("key, value")
+      .in("key", ["sheets_sync_url", "sheets_sync_secret"]);
+    const map = Object.fromEntries((cfg ?? []).map((r) => [r.key, r.value]));
+    const url = map["sheets_sync_url"];
+    const secret = map["sheets_sync_secret"];
+    if (!url || !secret) throw new Error("Sync not configured");
+
+    const counts: Record<string, number> = {};
+    for (const table of BACKUP_TABLES) {
+      const { data: rows } = await supabaseAdmin.from(table).select("*").limit(10000);
+      const list = (rows ?? []) as Array<Record<string, unknown>>;
+      counts[table] = list.length;
+      for (const record of list) {
+        // Sequential to keep row order and avoid Sheets rate limits.
+        await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-sync-secret": secret },
+          body: JSON.stringify({ table, op: "INSERT", record, old_record: null }),
+        }).catch(() => {});
+      }
+    }
+    return { ok: true, counts };
+  });
