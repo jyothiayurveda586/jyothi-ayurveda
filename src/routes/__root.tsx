@@ -62,8 +62,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Ayurveda Hospital — OP Register & Appointments" },
       { name: "twitter:description", content: "Book Ayurveda consultations and treatments. Daily OP register and patient records for the hospital team." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b2edfc7-19b1-4fb5-a036-80c5c8428513/id-preview-c3ebe22f--e352f738-4d17-40dc-ae51-05db9445368d.lovable.app-1783679077099.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9b2edfc7-19b1-4fb5-a036-80c5c8428513/id-preview-c3ebe22f--e352f738-4d17-40dc-ae51-05db9445368d.lovable.app-1783679077099.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/xWS7JqWRa0W3uTC5Wn6K5uHXmZC2/social-images/social-1784311248893-40627.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/xWS7JqWRa0W3uTC5Wn6K5uHXmZC2/social-images/social-1784311248893-40627.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
