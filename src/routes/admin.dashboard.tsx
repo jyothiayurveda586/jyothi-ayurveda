@@ -572,6 +572,7 @@ function HospitalTab() {
       }});
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["hospital-settings"] });
+      qc.invalidateQueries({ queryKey: ["hospital-settings-public"] });
     } catch (e: any) { toast.error(e.message ?? "Failed"); }
   };
 
