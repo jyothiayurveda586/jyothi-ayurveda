@@ -12,6 +12,7 @@ import {
   adminCreateUploadUrl, adminGetMediaUrl,
   adminListTable, adminExportAll,
   adminGetStats,
+  adminSheetsSyncStatus, adminSheetsSyncInit,
 } from "@/lib/admin.functions";
 import { clearAdminToken, getAdminToken } from "@/lib/admin-token";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +71,7 @@ function AdminDashboard() {
             <TabsTrigger value="treatments">Treatments</TabsTrigger>
             <TabsTrigger value="hospital">Hospital Info</TabsTrigger>
             <TabsTrigger value="database">Database</TabsTrigger>
+            <TabsTrigger value="backup">Sheets Backup</TabsTrigger>
             <TabsTrigger value="settings">Password</TabsTrigger>
           </TabsList>
           <TabsContent value="op"><OpRegisterTab /></TabsContent>
@@ -79,6 +81,7 @@ function AdminDashboard() {
           <TabsContent value="treatments"><TreatmentsTab /></TabsContent>
           <TabsContent value="hospital"><HospitalTab /></TabsContent>
           <TabsContent value="database"><DatabaseTab /></TabsContent>
+          <TabsContent value="backup"><SheetsBackupTab /></TabsContent>
           <TabsContent value="settings"><PasswordTab /></TabsContent>
         </Tabs>
       </main>
