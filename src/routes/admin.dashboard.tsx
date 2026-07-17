@@ -13,6 +13,7 @@ import {
   adminListTable, adminExportAll,
   adminGetStats,
   adminSheetsSyncStatus, adminSheetsSyncInit,
+  adminSheetsBackfill,
 } from "@/lib/admin.functions";
 import { clearAdminToken, getAdminToken } from "@/lib/admin-token";
 import { supabase } from "@/integrations/supabase/client";
@@ -958,11 +959,13 @@ function StatsTab() {
 function SheetsBackupTab() {
   const status = useServerFn(adminSheetsSyncStatus);
   const init = useServerFn(adminSheetsSyncInit);
+  const backfill = useServerFn(adminSheetsBackfill);
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["sheets-sync-status"],
     queryFn: () => status(),
   });
   const [busy, setBusy] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
     if (data && !data.secretConfigured) {
@@ -979,6 +982,17 @@ function SheetsBackupTab() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally { setBusy(false); }
+  };
+
+  const doBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const r = await backfill();
+      const total = Object.values(r.counts).reduce((a, b) => a + b, 0);
+      toast.success(`Backed up ${total} rows to Google Sheets`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally { setBackfilling(false); }
   };
 
   return (
@@ -1010,6 +1024,9 @@ function SheetsBackupTab() {
         )}
         <Button onClick={doInit} disabled={busy}>
           {busy ? "Working…" : "Re-configure sync"}
+        </Button>
+        <Button onClick={doBackfill} disabled={backfilling} variant="secondary" className="ml-2">
+          {backfilling ? "Backing up…" : "Back up everything now"}
         </Button>
       </CardContent>
     </Card>
