@@ -337,6 +337,8 @@ function AppointmentsTab() {
 function DoctorsTab() {
   const save = useServerFn(adminSaveDoctor);
   const del = useServerFn(adminDeleteDoctor);
+  const createUpload = useServerFn(adminCreateUploadUrl);
+  const getMediaUrl = useServerFn(adminGetMediaUrl);
   const qc = useQueryClient();
   const { data: doctors } = useQuery({
     queryKey: ["doctors-all"],
@@ -344,12 +346,24 @@ function DoctorsTab() {
   });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const openNew = () => { setEditing({ name: "", specialization: "", display_order: 0, active: true, available_days: [1,2,3,4,5,6], start_time: "09:00", end_time: "17:00", slot_minutes: 30 }); setOpen(true); };
+  const openNew = () => { setEditing({ name: "", specialization: "", bio: "", timings: "", photo_url: null, display_order: 0, active: true, available_days: [1,2,3,4,5,6], start_time: "09:00", end_time: "17:00", slot_minutes: 30 }); setOpen(true); };
   const submit = async () => {
+    if (!editing?.name?.trim() || !editing?.specialization?.trim()) {
+      toast.error("Name and Specialization are required");
+      return;
+    }
+    setSaving(true);
     try {
       await save({ data: {
         ...editing,
+        name: editing.name.trim(),
+        specialization: editing.specialization.trim(),
+        bio: editing.bio || null,
+        timings: editing.timings || null,
+        photo_url: editing.photo_url || null,
         display_order: Number(editing.display_order || 0),
         slot_minutes: Number(editing.slot_minutes || 30),
         available_days: (editing.available_days ?? []).map((n: any) => Number(n)),
@@ -359,8 +373,40 @@ function DoctorsTab() {
       toast.success("Saved"); setOpen(false);
       qc.invalidateQueries({ queryKey: ["doctors-all"] });
       qc.invalidateQueries({ queryKey: ["doctors"] });
-    } catch (e: any) { toast.error(e.message ?? "Failed"); }
+    } catch (e: any) {
+      console.error("Save doctor failed", e);
+      toast.error(e?.message ?? "Failed to save doctor");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const onPickPhoto = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      // Auto-resize to a max of 512x512, keep aspect ratio, output JPEG.
+      const resized = await resizeImage(file, 512, 512, 0.85);
+      const { path, signedUrl } = await createUpload({
+        data: { filename: (file.name.replace(/\.[^.]+$/, "") || "photo") + ".jpg", kind: "thumb" },
+      });
+      const put = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg", "x-upsert": "true" },
+        body: resized,
+      });
+      if (!put.ok) throw new Error("Upload failed");
+      const { url } = await getMediaUrl({ data: { path } });
+      setEditing((prev: any) => ({ ...prev, photo_url: url }));
+      toast.success("Photo uploaded");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message ?? "Photo upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Delete this doctor?")) return;
     await del({ data: { id } });
@@ -397,6 +443,38 @@ function DoctorsTab() {
           <DialogHeader><DialogTitle>{editing?.id ? "Edit doctor" : "New doctor"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-20 w-20 rounded-full overflow-hidden border border-border/60 bg-secondary flex items-center justify-center shrink-0">
+                  {editing.photo_url
+                    ? <img src={editing.photo_url} alt="Doctor" className="h-full w-full object-cover" />
+                    : <span className="text-2xl text-muted-foreground">
+                        {(editing.name || "?").trim().charAt(0).toUpperCase()}
+                      </span>}
+                </div>
+                <div className="grid gap-2">
+                  <Label>Profile picture</Label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      id="doctor-photo-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickPhoto(f); e.target.value = ""; }}
+                    />
+                    <Button type="button" variant="secondary" size="sm" disabled={uploading}
+                      onClick={() => document.getElementById("doctor-photo-input")?.click()}>
+                      {uploading ? "Uploading…" : editing.photo_url ? "Change photo" : "Choose from gallery"}
+                    </Button>
+                    {editing.photo_url && (
+                      <Button type="button" variant="ghost" size="sm"
+                        onClick={() => setEditing({ ...editing, photo_url: null })}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Auto-resized to 512×512.</p>
+                </div>
+              </div>
               <div><Label>Name *</Label><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
               <div><Label>Specialization *</Label><Input value={editing.specialization} onChange={(e) => setEditing({ ...editing, specialization: e.target.value })} /></div>
               <div><Label>Bio</Label><Textarea value={editing.bio ?? ""} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} /></div>
@@ -436,7 +514,10 @@ function DoctorsTab() {
               </div>
             </div>
           )}
-          <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={submit}>Save</Button></DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="button" onClick={submit} disabled={saving || uploading}>{saving ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
