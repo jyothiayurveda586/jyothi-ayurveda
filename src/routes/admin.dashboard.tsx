@@ -32,6 +32,31 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
 
+async function resizeImage(file: File, maxW: number, maxH: number, quality = 0.85): Promise<Blob> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error("Invalid image"));
+    i.src = dataUrl;
+  });
+  const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+  const w = Math.round(img.width * ratio);
+  const h = Math.round(img.height * ratio);
+  const canvas = document.createElement("canvas");
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0, w, h);
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => b ? resolve(b) : reject(new Error("Encode failed")), "image/jpeg", quality);
+  });
+}
+
 function AdminDashboard() {
   const navigate = useNavigate();
   const me = useServerFn(adminMe);
