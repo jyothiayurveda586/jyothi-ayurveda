@@ -464,7 +464,7 @@ function DoctorsTab() {
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing?.id ? "Edit doctor" : "New doctor"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid gap-3">
