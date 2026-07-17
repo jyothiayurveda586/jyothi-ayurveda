@@ -310,9 +310,17 @@ function ServicesSection() {
             <Card key={d.id} className="border-border/60">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-                    <User2 className="h-6 w-6" />
-                  </div>
+                  {d.photo_url ? (
+                    <img
+                      src={d.photo_url}
+                      alt={d.name}
+                      className="h-12 w-12 rounded-full object-cover border border-border/60"
+                    />
+                  ) : (
+                    <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+                      <User2 className="h-6 w-6" />
+                    </div>
+                  )}
                   <div>
                     <CardTitle className="font-serif text-2xl">{d.name}</CardTitle>
                     <CardDescription>{d.specialization}</CardDescription>

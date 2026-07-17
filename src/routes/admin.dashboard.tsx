@@ -449,9 +449,18 @@ function DoctorsTab() {
         <div className="grid gap-3">
           {doctors?.map((d: any) => (
             <div key={d.id} className="flex items-center justify-between rounded-lg border border-border/60 p-3">
-              <div>
-                <div className="font-medium">{d.name} {!d.active && <Badge variant="secondary">inactive</Badge>}</div>
-                <div className="text-sm text-muted-foreground">{d.specialization} · {d.timings}</div>
+              <div className="flex items-center gap-3 min-w-0">
+                {d.photo_url ? (
+                  <img src={d.photo_url} alt={d.name} className="h-10 w-10 rounded-full object-cover border border-border/60 shrink-0" />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-secondary grid place-items-center text-sm shrink-0">
+                    {(d.name || "?").trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{d.name} {!d.active && <Badge variant="secondary">inactive</Badge>}</div>
+                  <div className="text-sm text-muted-foreground truncate">{d.specialization} · {d.timings}</div>
+                </div>
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => { setEditing({ ...d }); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
