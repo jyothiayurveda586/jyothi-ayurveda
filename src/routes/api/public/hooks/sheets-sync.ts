@@ -78,7 +78,7 @@ async function ensureTab(
   const header = ["_synced_at", "_op", ...columns];
   const endCol = columnLetter(header.length);
   await gw(
-    `/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(table)}!A1:${endCol}1?valueInputOption=RAW`,
+    `/spreadsheets/${spreadsheetId}/values/${table}!A1:${endCol}1?valueInputOption=RAW`,
     { method: "PUT", body: JSON.stringify({ values: [header] }) },
   );
 }
@@ -97,7 +97,7 @@ async function findRowById(
 ): Promise<number | null> {
   const range = `${table}!C2:C`;
   const res = await gw(
-    `/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+    `/spreadsheets/${spreadsheetId}/values/${range}`,
   );
   const values: string[][] = res.values ?? [];
   for (let i = 0; i < values.length; i++) {
@@ -124,12 +124,12 @@ async function syncRecord(payload: Payload) {
   const existingRow = id ? await findRowById(spreadsheetId, payload.table, id) : null;
   if (existingRow) {
     await gw(
-      `/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(payload.table)}!A${existingRow}:${endCol}${existingRow}?valueInputOption=RAW`,
+      `/spreadsheets/${spreadsheetId}/values/${payload.table}!A${existingRow}:${endCol}${existingRow}?valueInputOption=RAW`,
       { method: "PUT", body: JSON.stringify({ values: [row] }) },
     );
   } else {
     await gw(
-      `/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(payload.table)}!A:${endCol}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `/spreadsheets/${spreadsheetId}/values/${payload.table}!A:${endCol}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       { method: "POST", body: JSON.stringify({ values: [row] }) },
     );
   }
