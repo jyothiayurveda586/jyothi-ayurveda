@@ -839,7 +839,7 @@ function DatabaseTab() {
                   {cols.map((c) => {
                     const v = r[c];
                     const s = v === null || v === undefined ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
-                    return <td key={c} className="px-2 py-1 whitespace-pre-wrap break-all max-w-xs">{s}</td>;
+                    return <td key={c} className="px-2 py-1 whitespace-pre-wrap break-words align-top min-w-[10rem] max-w-sm">{s}</td>;
                   })}
                 </tr>
               ))}
