@@ -308,6 +308,7 @@ const opSchema = z.object({
   treatment_notes: z.string().nullable().optional(),
   prescription: z.string().nullable().optional(),
   fee: z.number().nullable().optional(),
+  next_followup_date: z.string().nullable().optional(),
 });
 export const adminListOp = createServerFn({ method: "GET" })
   .middleware([attachAdminToken])

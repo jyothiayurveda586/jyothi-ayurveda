@@ -102,6 +102,13 @@ function RootComponent() {
     return () => sub.subscription.unsubscribe();
   }, [queryClient]);
 
+  // Register service worker for push notifications (idempotent).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

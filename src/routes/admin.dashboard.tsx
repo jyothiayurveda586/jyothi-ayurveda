@@ -15,6 +15,12 @@ import {
   adminSheetsSyncStatus, adminSheetsSyncInit,
   adminSheetsBackfill,
 } from "@/lib/admin.functions";
+import {
+  adminListVideos, adminSaveVideo, adminDeleteVideo,
+  adminListNewsletters, adminSaveNewsletter, adminDeleteNewsletter, adminNotifyNewsletter,
+  adminListSlides, adminSaveSlide, adminDeleteSlide, adminNotifySlide,
+} from "@/lib/content-admin.functions";
+import { adminSendPush } from "@/lib/push.functions";
 import { clearAdminToken, getAdminToken } from "@/lib/admin-token";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
@@ -98,6 +104,7 @@ function AdminDashboard() {
             <TabsTrigger value="hospital">Hospital Info</TabsTrigger>
             <TabsTrigger value="database">Database</TabsTrigger>
             <TabsTrigger value="backup">Sheets Backup</TabsTrigger>
+            <TabsTrigger value="content">Content & Push</TabsTrigger>
             <TabsTrigger value="settings">Password</TabsTrigger>
           </TabsList>
           <TabsContent value="op"><OpRegisterTab /></TabsContent>
@@ -108,6 +115,7 @@ function AdminDashboard() {
           <TabsContent value="hospital"><HospitalTab /></TabsContent>
           <TabsContent value="database"><DatabaseTab /></TabsContent>
           <TabsContent value="backup"><SheetsBackupTab /></TabsContent>
+          <TabsContent value="content"><ContentTab /></TabsContent>
           <TabsContent value="settings"><PasswordTab /></TabsContent>
         </Tabs>
       </main>
@@ -247,7 +255,7 @@ function OpRegisterTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-muted-foreground border-b">
-              <tr><th className="py-2 pr-2">Date</th><th className="pr-2">OP#</th><th className="pr-2">Patient</th><th className="pr-2">Doctor</th><th className="pr-2">Diagnosis</th><th className="pr-2">Fee</th><th></th></tr>
+              <tr><th className="py-2 pr-2">Date</th><th className="pr-2">OP#</th><th className="pr-2">Patient</th><th className="pr-2">Doctor</th><th className="pr-2">Diagnosis</th><th className="pr-2">Fee</th><th className="pr-2">Next follow-up</th><th></th></tr>
             </thead>
             <tbody>
               {ops?.map((o: any) => (
@@ -258,13 +266,14 @@ function OpRegisterTab() {
                   <td className="pr-2">{o.doctors?.name ?? "—"}</td>
                   <td className="pr-2 max-w-xs truncate">{o.diagnosis ?? "—"}</td>
                   <td className="pr-2">{o.fee ?? "—"}</td>
+                  <td className="pr-2 whitespace-nowrap">{o.next_followup_date ?? "—"}</td>
                   <td className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(o)}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => remove(o.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
-              {!ops?.length && <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">No entries yet.</td></tr>}
+              {!ops?.length && <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No entries yet.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -298,6 +307,7 @@ function OpRegisterTab() {
               <div className="md:col-span-2"><Label>Treatment notes</Label><Textarea value={editing.treatment_notes ?? ""} onChange={(e) => setEditing({ ...editing, treatment_notes: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>Prescription</Label><Textarea value={editing.prescription ?? ""} onChange={(e) => setEditing({ ...editing, prescription: e.target.value })} /></div>
               <div><Label>Fee (₹)</Label><Input type="number" step="0.01" value={editing.fee ?? ""} onChange={(e) => setEditing({ ...editing, fee: e.target.value })} /></div>
+              <div><Label>Next follow-up date</Label><Input type="date" value={editing.next_followup_date ?? ""} onChange={(e) => setEditing({ ...editing, next_followup_date: e.target.value })} /></div>
             </div>
           )}
           <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={submit}>Save</Button></DialogFooter>
@@ -1143,6 +1153,193 @@ function SheetsBackupTab() {
         <Button onClick={doBackfill} disabled={backfilling} variant="secondary" className="ml-2">
           {backfilling ? "Backing up…" : "Back up everything now"}
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Content & Push ---------- */
+function ContentTab() {
+  return (
+    <div className="mt-4 space-y-6">
+      <PushBroadcastCard />
+      <SlidesCard />
+      <VideosCard />
+      <NewslettersCard />
+    </div>
+  );
+}
+
+function PushBroadcastCard() {
+  const send = useServerFn(adminSendPush);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    if (!title.trim() || !body.trim()) return toast.error("Title and body required");
+    setBusy(true);
+    try {
+      const r = await send({ data: { title: title.trim(), body: body.trim() } });
+      toast.success(`Sent to ${r.sent}/${r.total}`);
+      setTitle(""); setBody("");
+    } catch (e: any) { toast.error(e.message ?? "Failed"); } finally { setBusy(false); }
+  };
+  return (
+    <Card>
+      <CardHeader><CardTitle>Broadcast push notification</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <div><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+        <div><Label>Message</Label><Textarea value={body} onChange={(e) => setBody(e.target.value)} /></div>
+        <Button onClick={submit} disabled={busy}>{busy ? "Sending…" : "Send to all subscribers"}</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SlidesCard() {
+  const list = useServerFn(adminListSlides);
+  const save = useServerFn(adminSaveSlide);
+  const del = useServerFn(adminDeleteSlide);
+  const notify = useServerFn(adminNotifySlide);
+  const qc = useQueryClient();
+  const { data: slides } = useQuery({ queryKey: ["admin-slides"], queryFn: () => list() });
+  const [form, setForm] = useState<any>({ image_url: "", caption: "", link_url: "", display_order: 0, active: true });
+  const add = async () => {
+    if (!form.image_url) return toast.error("Image URL required");
+    try {
+      const r = await save({ data: { ...form, display_order: Number(form.display_order) || 0 } });
+      toast.success("Saved");
+      setForm({ image_url: "", caption: "", link_url: "", display_order: 0, active: true });
+      qc.invalidateQueries({ queryKey: ["admin-slides"] });
+      if (r.id && confirm("Notify subscribers about this announcement?")) {
+        await notify({ data: { id: r.id } });
+        toast.success("Notification sent");
+      }
+    } catch (e: any) { toast.error(e.message ?? "Failed"); }
+  };
+  const remove = async (id: string) => {
+    if (!confirm("Delete this slide?")) return;
+    await del({ data: { id } });
+    qc.invalidateQueries({ queryKey: ["admin-slides"] });
+  };
+  return (
+    <Card>
+      <CardHeader><CardTitle>Home slides / Announcements</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://…" /></div>
+          <div><Label>Link URL (optional)</Label><Input value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} /></div>
+          <div className="md:col-span-2"><Label>Caption</Label><Input value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} /></div>
+        </div>
+        <Button onClick={add}><Plus className="h-4 w-4 mr-1" />Add slide</Button>
+        <ul className="divide-y divide-border/60">
+          {slides?.map((s: any) => (
+            <li key={s.id} className="flex items-center gap-3 py-2">
+              <img src={s.image_url} alt="" className="h-10 w-16 object-cover rounded" />
+              <span className="flex-1 text-sm truncate">{s.caption || s.image_url}</span>
+              <Button variant="ghost" size="sm" onClick={() => notify({ data: { id: s.id } }).then(() => toast.success("Notified")).catch((e: any) => toast.error(e.message))}>Notify</Button>
+              <Button variant="ghost" size="icon" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </li>
+          ))}
+          {!slides?.length && <li className="py-4 text-sm text-muted-foreground">No slides yet.</li>}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+function VideosCard() {
+  const list = useServerFn(adminListVideos);
+  const save = useServerFn(adminSaveVideo);
+  const del = useServerFn(adminDeleteVideo);
+  const qc = useQueryClient();
+  const { data: videos } = useQuery({ queryKey: ["admin-videos"], queryFn: () => list() });
+  const [form, setForm] = useState<any>({ youtube_url: "", title: "", description: "", display_order: 0, active: true });
+  const add = async () => {
+    if (!form.youtube_url) return toast.error("YouTube URL required");
+    try {
+      await save({ data: { ...form, display_order: Number(form.display_order) || 0 } });
+      toast.success("Saved");
+      setForm({ youtube_url: "", title: "", description: "", display_order: 0, active: true });
+      qc.invalidateQueries({ queryKey: ["admin-videos"] });
+    } catch (e: any) { toast.error(e.message ?? "Failed"); }
+  };
+  const remove = async (id: string) => {
+    if (!confirm("Delete this video?")) return;
+    await del({ data: { id } });
+    qc.invalidateQueries({ queryKey: ["admin-videos"] });
+  };
+  return (
+    <Card>
+      <CardHeader><CardTitle>Lifestyle YouTube videos</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div><Label>YouTube URL</Label><Input value={form.youtube_url} onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} placeholder="https://youtube.com/watch?v=…" /></div>
+          <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+          <div className="md:col-span-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+        </div>
+        <Button onClick={add}><Plus className="h-4 w-4 mr-1" />Add video</Button>
+        <ul className="divide-y divide-border/60">
+          {videos?.map((v: any) => (
+            <li key={v.id} className="flex items-center gap-3 py-2">
+              <span className="flex-1 text-sm truncate">{v.title || v.youtube_url}</span>
+              <a href={v.youtube_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">Open</a>
+              <Button variant="ghost" size="icon" onClick={() => remove(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </li>
+          ))}
+          {!videos?.length && <li className="py-4 text-sm text-muted-foreground">No videos yet.</li>}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+function NewslettersCard() {
+  const list = useServerFn(adminListNewsletters);
+  const save = useServerFn(adminSaveNewsletter);
+  const del = useServerFn(adminDeleteNewsletter);
+  const notify = useServerFn(adminNotifyNewsletter);
+  const qc = useQueryClient();
+  const { data: items } = useQuery({ queryKey: ["admin-newsletters"], queryFn: () => list() });
+  const [form, setForm] = useState<any>({ title: "", body: "", image_url: "", active: true });
+  const add = async () => {
+    if (!form.title.trim()) return toast.error("Title required");
+    try {
+      const r = await save({ data: { ...form, image_url: form.image_url || undefined } });
+      toast.success("Saved");
+      setForm({ title: "", body: "", image_url: "", active: true });
+      qc.invalidateQueries({ queryKey: ["admin-newsletters"] });
+      if (r.id && confirm("Notify subscribers about this newsletter?")) {
+        await notify({ data: { id: r.id } });
+        toast.success("Notification sent");
+      }
+    } catch (e: any) { toast.error(e.message ?? "Failed"); }
+  };
+  const remove = async (id: string) => {
+    if (!confirm("Delete this newsletter?")) return;
+    await del({ data: { id } });
+    qc.invalidateQueries({ queryKey: ["admin-newsletters"] });
+  };
+  return (
+    <Card>
+      <CardHeader><CardTitle>Newsletters</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+          <div><Label>Image URL (optional)</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
+          <div className="md:col-span-2"><Label>Body</Label><Textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
+        </div>
+        <Button onClick={add}><Plus className="h-4 w-4 mr-1" />Publish newsletter</Button>
+        <ul className="divide-y divide-border/60">
+          {items?.map((n: any) => (
+            <li key={n.id} className="flex items-center gap-3 py-2">
+              <span className="flex-1 text-sm truncate">{n.title}</span>
+              <Button variant="ghost" size="sm" onClick={() => notify({ data: { id: n.id } }).then(() => toast.success("Notified")).catch((e: any) => toast.error(e.message))}>Notify</Button>
+              <Button variant="ghost" size="icon" onClick={() => remove(n.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </li>
+          ))}
+          {!items?.length && <li className="py-4 text-sm text-muted-foreground">No newsletters yet.</li>}
+        </ul>
       </CardContent>
     </Card>
   );
