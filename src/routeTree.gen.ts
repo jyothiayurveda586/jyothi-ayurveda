@@ -10,16 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PatientRouteImport } from './routes/patient'
+import { Route as LifestyleRouteImport } from './routes/lifestyle'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as ApiPublicHooksSheetsSyncRouteImport } from './routes/api/public/hooks/sheets-sync'
+import { Route as ApiPublicHooksScheduledRouteImport } from './routes/api/public/hooks/scheduled'
 
 const PatientRoute = PatientRouteImport.update({
   id: '/patient',
   path: '/patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LifestyleRoute = LifestyleRouteImport.update({
+  id: '/lifestyle',
+  path: '/lifestyle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -53,22 +60,31 @@ const ApiPublicHooksSheetsSyncRoute =
     path: '/api/public/hooks/sheets-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksScheduledRoute = ApiPublicHooksScheduledRouteImport.update({
+  id: '/api/public/hooks/scheduled',
+  path: '/api/public/hooks/scheduled',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/lifestyle': typeof LifestyleRoute
   '/patient': typeof PatientRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/hooks/scheduled': typeof ApiPublicHooksScheduledRoute
   '/api/public/hooks/sheets-sync': typeof ApiPublicHooksSheetsSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/lifestyle': typeof LifestyleRoute
   '/patient': typeof PatientRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/hooks/scheduled': typeof ApiPublicHooksScheduledRoute
   '/api/public/hooks/sheets-sync': typeof ApiPublicHooksSheetsSyncRoute
 }
 export interface FileRoutesById {
@@ -76,9 +92,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/lifestyle': typeof LifestyleRoute
   '/patient': typeof PatientRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/hooks/scheduled': typeof ApiPublicHooksScheduledRoute
   '/api/public/hooks/sheets-sync': typeof ApiPublicHooksSheetsSyncRoute
 }
 export interface FileRouteTypes {
@@ -87,26 +105,32 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/lifestyle'
     | '/patient'
     | '/admin/dashboard'
     | '/admin/'
+    | '/api/public/hooks/scheduled'
     | '/api/public/hooks/sheets-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/lifestyle'
     | '/patient'
     | '/admin/dashboard'
     | '/admin'
+    | '/api/public/hooks/scheduled'
     | '/api/public/hooks/sheets-sync'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
+    | '/lifestyle'
     | '/patient'
     | '/admin/dashboard'
     | '/admin/'
+    | '/api/public/hooks/scheduled'
     | '/api/public/hooks/sheets-sync'
   fileRoutesById: FileRoutesById
 }
@@ -114,7 +138,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LifestyleRoute: typeof LifestyleRoute
   PatientRoute: typeof PatientRoute
+  ApiPublicHooksScheduledRoute: typeof ApiPublicHooksScheduledRoute
   ApiPublicHooksSheetsSyncRoute: typeof ApiPublicHooksSheetsSyncRoute
 }
 
@@ -125,6 +151,13 @@ declare module '@tanstack/react-router' {
       path: '/patient'
       fullPath: '/patient'
       preLoaderRoute: typeof PatientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lifestyle': {
+      id: '/lifestyle'
+      path: '/lifestyle'
+      fullPath: '/lifestyle'
+      preLoaderRoute: typeof LifestyleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -169,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSheetsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/scheduled': {
+      id: '/api/public/hooks/scheduled'
+      path: '/api/public/hooks/scheduled'
+      fullPath: '/api/public/hooks/scheduled'
+      preLoaderRoute: typeof ApiPublicHooksScheduledRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -188,19 +228,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  LifestyleRoute: LifestyleRoute,
   PatientRoute: PatientRoute,
+  ApiPublicHooksScheduledRoute: ApiPublicHooksScheduledRoute,
   ApiPublicHooksSheetsSyncRoute: ApiPublicHooksSheetsSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

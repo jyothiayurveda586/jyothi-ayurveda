@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Leaf, User, LogOut, Shield, Home as HomeIcon, CalendarCheck } from "lucide-react";
+import { Leaf, User, LogOut, Shield, Home as HomeIcon, CalendarCheck, Sparkles } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function SiteHeader() {
@@ -49,6 +49,7 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden md:flex items-center gap-1 text-sm">
           <Link to="/" className={`px-3 py-2 rounded-md transition ${isActive("/") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}>Home</Link>
+          <Link to="/lifestyle" className={`px-3 py-2 rounded-md transition ${isActive("/lifestyle") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}>Lifestyle</Link>
           {session && (
             <Link to="/patient" className={`px-3 py-2 rounded-md transition ${isActive("/patient") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}>My Visits</Link>
           )}
@@ -59,6 +60,9 @@ export function SiteHeader() {
           <nav className="flex md:hidden items-center gap-1">
             <Link to="/" aria-label="Home" className={`grid h-9 w-9 place-items-center rounded-md transition ${isActive("/") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
               <HomeIcon className="h-4 w-4" />
+            </Link>
+            <Link to="/lifestyle" aria-label="Lifestyle" className={`grid h-9 w-9 place-items-center rounded-md transition ${isActive("/lifestyle") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+              <Sparkles className="h-4 w-4" />
             </Link>
             {session && (
               <Link to="/patient" aria-label="My Visits" className={`grid h-9 w-9 place-items-center rounded-md transition ${isActive("/patient") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>

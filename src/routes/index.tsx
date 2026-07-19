@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { publicGetBookedSlots } from "@/lib/admin.functions";
+import { notifyNewAppointment, getVapidPublicKey } from "@/lib/push.functions";
+import { subscribeToPush, isPushSupported } from "@/lib/push-client";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Leaf, Clock, IndianRupee, MapPin, Phone, Mail, User2, Sparkles, ChevronLeft, ChevronRight, MessageCircle, Instagram } from "lucide-react";
+import { Leaf, Clock, IndianRupee, MapPin, Phone, Mail, User2, Sparkles, ChevronLeft, ChevronRight, MessageCircle, Instagram, Bell, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -60,6 +62,23 @@ function HomeSection({ onBook }: { onBook: () => void }) {
   const { data: h } = useHospital();
   const banners: any[] = Array.isArray((h as any)?.banners) ? (h as any).banners : [];
   const videos: any[] = Array.isArray((h as any)?.video_statuses) ? (h as any).video_statuses : [];
+  const { data: slides } = useQuery({
+    queryKey: ["home-slides-public"],
+    queryFn: async () =>
+      (await supabase.from("home_slides").select("*").eq("active", true).order("display_order")).data ?? [],
+  });
+  const { data: newsletters } = useQuery({
+    queryKey: ["newsletters-public"],
+    queryFn: async () =>
+      (await supabase.from("newsletters").select("*").eq("active", true).order("published_at", { ascending: false }).limit(6)).data ?? [],
+  });
+  const [slideIdx, setSlideIdx] = useState(0);
+  useEffect(() => {
+    const list = slides ?? [];
+    if (list.length <= 1) return;
+    const t = setInterval(() => setSlideIdx((i) => (i + 1) % list.length), 5000);
+    return () => clearInterval(t);
+  }, [slides]);
   const [bannerIdx, setBannerIdx] = useState(0);
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -75,6 +94,7 @@ function HomeSection({ onBook }: { onBook: () => void }) {
 
   return (
     <div className="mt-6 space-y-8">
+      <PushPrompt />
       {/* Banner carousel */}
       <div className="relative overflow-hidden rounded-3xl aspect-[16/9] md:aspect-[16/7] shadow-sm bg-secondary/40">
         {banners.length > 0 ? (
@@ -181,6 +201,68 @@ function HomeSection({ onBook }: { onBook: () => void }) {
         </div>
       </section>
 
+      {/* Admin slides */}
+      {slides && slides.length > 0 && (
+        <section>
+          <h3 className="font-serif text-2xl mb-3">Announcements</h3>
+          <div className="relative overflow-hidden rounded-2xl aspect-[16/8] md:aspect-[16/6] bg-secondary/40">
+            {slides.map((s: any, i: number) => (
+              <a
+                key={s.id}
+                href={s.link_url || "#"}
+                target={s.link_url ? "_blank" : undefined}
+                rel={s.link_url ? "noreferrer" : undefined}
+                onClick={(e) => { if (!s.link_url) e.preventDefault(); }}
+                className={`absolute inset-0 transition-opacity duration-700 ${i === slideIdx ? "opacity-100" : "opacity-0"}`}
+              >
+                <img src={s.image_url} alt={s.caption ?? ""} className="absolute inset-0 h-full w-full object-cover scale-110 blur-2xl opacity-60" aria-hidden />
+                <img src={s.image_url} alt={s.caption ?? ""} className="relative h-full w-full object-contain" />
+                {s.caption && (
+                  <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-black/50 px-4 py-2 text-white text-sm md:text-base backdrop-blur">{s.caption}</div>
+                )}
+              </a>
+            ))}
+            {slides.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {slides.map((_: any, i: number) => (
+                  <button key={i} onClick={() => setSlideIdx(i)} aria-label={`Slide ${i+1}`}
+                    className={`h-1.5 rounded-full transition-all ${i === slideIdx ? "w-6 bg-white" : "w-2 bg-white/60"}`} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Newsletters */}
+      {newsletters && newsletters.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Newspaper className="h-5 w-5 text-primary" />
+            <h3 className="font-serif text-2xl">Newsletter</h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {newsletters.map((n: any) => (
+              <Card key={n.id} className="border-border/60 overflow-hidden">
+                {n.image_url && (
+                  <div className="aspect-[16/9] bg-secondary">
+                    <img src={n.image_url} alt={n.title} className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="font-serif text-xl">{n.title}</CardTitle>
+                  {n.published_at && (
+                    <CardDescription>{new Date(n.published_at).toLocaleDateString()}</CardDescription>
+                  )}
+                </CardHeader>
+                {n.body && (
+                  <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap">{n.body}</CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Hero copy */}
       <section className="rounded-3xl bg-hero-leaf p-8 md:p-14 shadow-sm">
@@ -375,6 +457,7 @@ function BookSection() {
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const notifyAppt = useServerFn(notifyNewAppointment);
 
   const selectedDoctor = useMemo(
     () => (doctors ?? []).find((d: any) => d.id === form.doctor_id),
@@ -433,7 +516,7 @@ function BookSection() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("appointments").insert({
+    const { data: inserted, error } = await supabase.from("appointments").insert({
       patient_id: userId,
       patient_name: form.patient_name,
       patient_phone: form.patient_phone,
@@ -442,10 +525,11 @@ function BookSection() {
       appointment_date: form.appointment_date,
       appointment_time: form.appointment_time,
       notes: form.notes || null,
-    });
+    }).select("id").maybeSingle();
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Appointment requested — we will confirm shortly.");
+    if (inserted?.id) notifyAppt({ data: { id: inserted.id } }).catch(() => {});
     setForm({ patient_name: userMeta.name ?? "", patient_phone: "", doctor_id: "", treatment_id: "", appointment_date: "", appointment_time: "", notes: "" });
   };
 
@@ -529,5 +613,41 @@ function ContactSection() {
         <CardContent><p className="text-sm text-muted-foreground leading-relaxed">{h?.about}</p></CardContent>
       </Card>
     </section>
+  );
+}
+
+function PushPrompt() {
+  const [visible, setVisible] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const getKey = useServerFn(getVapidPublicKey);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isPushSupported()) return;
+    if (localStorage.getItem("push-dismissed") === "1") return;
+    if (Notification.permission === "granted" || Notification.permission === "denied") return;
+    setVisible(true);
+  }, []);
+  if (!visible) return null;
+  const enable = async () => {
+    setBusy(true);
+    try {
+      const { key } = await getKey();
+      const sub = await subscribeToPush(key);
+      if (sub) toast.success("Notifications enabled");
+      else toast.error("Notifications not enabled");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setBusy(false);
+      setVisible(false);
+    }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+      <Bell className="h-5 w-5 text-primary" />
+      <p className="text-sm flex-1 min-w-[200px]">Get notified about appointments, follow-ups and daily wellness tips.</p>
+      <Button size="sm" onClick={enable} disabled={busy}>{busy ? "…" : "Enable"}</Button>
+      <Button size="sm" variant="ghost" onClick={() => { localStorage.setItem("push-dismissed", "1"); setVisible(false); }}>Not now</Button>
+    </div>
   );
 }

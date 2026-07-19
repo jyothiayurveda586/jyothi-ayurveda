@@ -143,6 +143,42 @@ export type Database = {
         }
         Relationships: []
       }
+      home_slides: {
+        Row: {
+          active: boolean
+          caption: string | null
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          link_url: string | null
+          notified: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          caption?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          link_url?: string | null
+          notified?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          caption?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          link_url?: string | null
+          notified?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hospital_settings: {
         Row: {
           about: string | null
@@ -194,6 +230,75 @@ export type Database = {
         }
         Relationships: []
       }
+      lifestyle_videos: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          title: string | null
+          updated_at: string
+          youtube_url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string | null
+          updated_at?: string
+          youtube_url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string | null
+          updated_at?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
+      newsletters: {
+        Row: {
+          active: boolean
+          body: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          notified: boolean
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          notified?: boolean
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          notified?: boolean
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       op_register: {
         Row: {
           age: number | null
@@ -204,6 +309,7 @@ export type Database = {
           fee: number | null
           gender: string | null
           id: string
+          next_followup_date: string | null
           op_number: number
           patient_id: string | null
           patient_name: string
@@ -222,6 +328,7 @@ export type Database = {
           fee?: number | null
           gender?: string | null
           id?: string
+          next_followup_date?: string | null
           op_number?: number
           patient_id?: string | null
           patient_name: string
@@ -240,6 +347,7 @@ export type Database = {
           fee?: number | null
           gender?: string | null
           id?: string
+          next_followup_date?: string | null
           op_number?: number
           patient_id?: string | null
           patient_name?: string
@@ -286,6 +394,39 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          topic: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          topic?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          topic?: string | null
+          updated_at?: string
+          user_agent?: string | null
         }
         Relationships: []
       }
