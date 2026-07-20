@@ -14,6 +14,7 @@ import {
   adminGetStats,
   adminSheetsSyncStatus, adminSheetsSyncInit,
   adminSheetsBackfill,
+  adminSearchPatientHistory,
 } from "@/lib/admin.functions";
 import {
   adminListVideos, adminSaveVideo, adminDeleteVideo,
@@ -33,7 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Plus, Pencil, Trash2, KeyRound } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, KeyRound, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
@@ -98,6 +99,7 @@ function AdminDashboard() {
           <TabsList className="flex flex-wrap h-auto w-full justify-start gap-1 p-1">
             <TabsTrigger value="op">OP Register</TabsTrigger>
             <TabsTrigger value="appts">Appointments</TabsTrigger>
+            <TabsTrigger value="history">Patient History</TabsTrigger>
             <TabsTrigger value="stats">Statistics</TabsTrigger>
             <TabsTrigger value="doctors">Doctors</TabsTrigger>
             <TabsTrigger value="treatments">Treatments</TabsTrigger>
@@ -109,6 +111,7 @@ function AdminDashboard() {
           </TabsList>
           <TabsContent value="op"><OpRegisterTab /></TabsContent>
           <TabsContent value="appts"><AppointmentsTab /></TabsContent>
+          <TabsContent value="history"><PatientHistoryTab /></TabsContent>
           <TabsContent value="stats"><StatsTab /></TabsContent>
           <TabsContent value="doctors"><DoctorsTab /></TabsContent>
           <TabsContent value="treatments"><TreatmentsTab /></TabsContent>
@@ -1342,5 +1345,167 @@ function NewslettersCard() {
         </ul>
       </CardContent>
     </Card>
+  );
+}
+
+function PatientHistoryTab() {
+  const search = useServerFn(adminSearchPatientHistory);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{
+    visits: any[];
+    appointments: any[];
+    found: boolean;
+  } | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (!q) return;
+    setLoading(true);
+    try {
+      const r = await search({ data: { query: q } });
+      setResult(r);
+      if (!r.found) toast.info("No records found.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Search failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif text-2xl">Search patient history</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[240px]">
+              <Label>Phone number or patient name</Label>
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="e.g. 9876543210 or Ramesh"
+              />
+            </div>
+            <Button type="submit" disabled={loading}>
+              <Search className="h-4 w-4 mr-1" /> {loading ? "Searching..." : "Search"}
+            </Button>
+          </form>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Searches OP register visits and appointment bookings. Numeric input matches phone; text matches name.
+          </p>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif text-xl">
+                Visits ({result.visits.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {result.visits.length ? (
+                <div className="space-y-4">
+                  {result.visits.map((o: any) => (
+                    <div key={o.id} className="rounded-lg border border-border/60 p-4">
+                      <div className="flex flex-wrap items-baseline gap-3 justify-between">
+                        <div className="font-medium">
+                          {o.visit_date} · OP #{o.op_number}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {o.doctors?.name ?? ""}
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {o.patient_name}
+                        {o.patient_phone ? ` · ${o.patient_phone}` : ""}
+                        {o.age ? ` · ${o.age}${o.gender ? "/" + o.gender : ""}` : ""}
+                      </div>
+                      {o.chief_complaint && (
+                        <p className="mt-2 text-sm">
+                          <span className="font-medium">Complaint:</span> {o.chief_complaint}
+                        </p>
+                      )}
+                      {o.diagnosis && (
+                        <p className="mt-1 text-sm">
+                          <span className="font-medium">Diagnosis:</span> {o.diagnosis}
+                        </p>
+                      )}
+                      {o.treatment_notes && (
+                        <p className="mt-1 text-sm">
+                          <span className="font-medium">Treatment:</span> {o.treatment_notes}
+                        </p>
+                      )}
+                      {o.prescription && (
+                        <p className="mt-1 text-sm">
+                          <span className="font-medium">Prescription:</span> {o.prescription}
+                        </p>
+                      )}
+                      {o.next_followup_date && (
+                        <p className="mt-1 text-sm">
+                          <span className="font-medium">Next follow-up:</span> {o.next_followup_date}
+                        </p>
+                      )}
+                      {o.fee != null && (
+                        <p className="mt-1 text-sm text-muted-foreground">Fee: ₹{o.fee}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No visits found.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif text-xl">
+                Appointments ({result.appointments.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {result.appointments.length ? (
+                <div className="divide-y divide-border/60">
+                  {result.appointments.map((a: any) => (
+                    <div key={a.id} className="py-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="font-medium">
+                          {a.appointment_date} · {a.appointment_time?.slice(0, 5)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {a.patient_name}
+                          {a.patient_phone ? ` · ${a.patient_phone}` : ""} ·{" "}
+                          {a.doctors?.name ?? "Any doctor"} ·{" "}
+                          {a.treatments?.name ?? "Consultation"}
+                        </div>
+                      </div>
+                      <Badge
+                        variant={
+                          a.status === "confirmed"
+                            ? "default"
+                            : a.status === "cancelled"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {a.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No appointments found.</p>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   );
 }

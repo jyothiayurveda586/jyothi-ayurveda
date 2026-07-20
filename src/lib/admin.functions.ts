@@ -494,3 +494,48 @@ export const adminSheetsBackfill = createServerFn({ method: "POST" })
     }
     return { ok: true, counts };
   });
+
+// ---- Patient history search (admin) ----
+export const adminSearchPatientHistory = createServerFn({ method: "POST" })
+  .middleware([attachAdminToken])
+  .inputValidator((d: { query: string }) =>
+    z.object({ query: z.string().trim().min(1).max(80) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const q = data.query.trim();
+    const digits = q.replace(/\D+/g, "");
+    const isPhone = digits.length >= 4 && digits.length / q.length > 0.6;
+    const like = `%${q}%`;
+
+    const visitsQuery = supabaseAdmin
+      .from("op_register")
+      .select(
+        "id, visit_date, op_number, patient_name, patient_phone, age, gender, chief_complaint, diagnosis, treatment_notes, prescription, fee, next_followup_date, doctors(name)",
+      )
+      .order("visit_date", { ascending: false })
+      .limit(200);
+    const apptsQuery = supabaseAdmin
+      .from("appointments")
+      .select(
+        "id, appointment_date, appointment_time, status, patient_name, patient_phone, notes, doctors(name), treatments(name)",
+      )
+      .order("appointment_date", { ascending: false })
+      .limit(200);
+
+    if (isPhone) {
+      visitsQuery.ilike("patient_phone", `%${digits}%`);
+      apptsQuery.ilike("patient_phone", `%${digits}%`);
+    } else {
+      visitsQuery.ilike("patient_name", like);
+      apptsQuery.ilike("patient_name", like);
+    }
+
+    const [{ data: visits }, { data: appts }] = await Promise.all([visitsQuery, apptsQuery]);
+    return {
+      visits: visits ?? [],
+      appointments: appts ?? [],
+      found: (visits?.length ?? 0) > 0 || (appts?.length ?? 0) > 0,
+    };
+  });
