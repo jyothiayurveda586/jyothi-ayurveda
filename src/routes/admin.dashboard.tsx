@@ -14,6 +14,7 @@ import {
   adminGetStats,
   adminSheetsSyncStatus, adminSheetsSyncInit,
   adminSheetsBackfill,
+  adminSearchPatientHistory,
 } from "@/lib/admin.functions";
 import {
   adminListVideos, adminSaveVideo, adminDeleteVideo,
@@ -33,7 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Plus, Pencil, Trash2, KeyRound } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, KeyRound, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboard });
@@ -98,6 +99,7 @@ function AdminDashboard() {
           <TabsList className="flex flex-wrap h-auto w-full justify-start gap-1 p-1">
             <TabsTrigger value="op">OP Register</TabsTrigger>
             <TabsTrigger value="appts">Appointments</TabsTrigger>
+            <TabsTrigger value="history">Patient History</TabsTrigger>
             <TabsTrigger value="stats">Statistics</TabsTrigger>
             <TabsTrigger value="doctors">Doctors</TabsTrigger>
             <TabsTrigger value="treatments">Treatments</TabsTrigger>
@@ -109,6 +111,7 @@ function AdminDashboard() {
           </TabsList>
           <TabsContent value="op"><OpRegisterTab /></TabsContent>
           <TabsContent value="appts"><AppointmentsTab /></TabsContent>
+          <TabsContent value="history"><PatientHistoryTab /></TabsContent>
           <TabsContent value="stats"><StatsTab /></TabsContent>
           <TabsContent value="doctors"><DoctorsTab /></TabsContent>
           <TabsContent value="treatments"><TreatmentsTab /></TabsContent>
