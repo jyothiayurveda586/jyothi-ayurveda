@@ -1165,6 +1165,7 @@ function SheetsBackupTab() {
 function ContentTab() {
   return (
     <div className="mt-4 space-y-6">
+      <AdminAlertsCard />
       <PushBroadcastCard />
       <SlidesCard />
       <VideosCard />
