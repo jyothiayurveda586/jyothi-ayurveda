@@ -1174,6 +1174,55 @@ function ContentTab() {
   );
 }
 
+function AdminAlertsCard() {
+  const getKey = useServerFn(getVapidPublicKey);
+  const send = useServerFn(adminSendPush);
+  const [busy, setBusy] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("admin-push") === "1") setEnabled(true);
+  }, []);
+
+  const enable = async () => {
+    if (!isPushSupported()) return toast.error("This browser does not support notifications");
+    setBusy(true);
+    try {
+      const { key } = await getKey();
+      const sub = await subscribeToPush(key, "admin");
+      if (!sub) return toast.error("Notification permission was not granted");
+      localStorage.setItem("admin-push", "1");
+      setEnabled(true);
+      toast.success("This device will now receive new-appointment alerts");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to enable notifications");
+    } finally { setBusy(false); }
+  };
+
+  const test = async () => {
+    setBusy(true);
+    try {
+      const r = await send({ data: { title: "Test alert", body: "Admin notifications are working.", url: "/admin/dashboard", topic: "admin" } });
+      toast.success(`Sent to ${r.sent}/${r.total} admin device(s)`);
+    } catch (e: any) { toast.error(e.message ?? "Failed"); } finally { setBusy(false); }
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>New appointment alerts</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Enable notifications on each device (phone or PC) that should be alerted when a patient books an appointment.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={enable} disabled={busy}>{enabled ? "Re-enable on this device" : "Enable on this device"}</Button>
+          <Button variant="outline" onClick={test} disabled={busy}>Send test alert</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function PushBroadcastCard() {
   const send = useServerFn(adminSendPush);
   const [title, setTitle] = useState("");
