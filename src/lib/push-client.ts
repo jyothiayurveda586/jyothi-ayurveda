@@ -44,16 +44,7 @@ export async function subscribeToPush(vapidPublicKey: string, topic?: string) {
     user_agent: navigator.userAgent,
     topic: topic ?? null,
   };
-  // Use supabase Data API insert directly (RLS allows anon insert)
-  await supabase.from("push_subscriptions").upsert(
-    {
-      endpoint: payload.endpoint,
-      p256dh: payload.keys.p256dh,
-      auth: payload.keys.auth,
-      user_agent: payload.user_agent,
-      topic: payload.topic,
-    },
-    { onConflict: "endpoint" },
-  );
+  // Client writes are blocked by RLS; persist through the server function.
+  await savePushSubscription({ data: payload });
   return sub;
 }
