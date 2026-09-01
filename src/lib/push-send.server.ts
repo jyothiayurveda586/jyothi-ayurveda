@@ -13,10 +13,12 @@ export async function sendPushToAll(payload: {
     process.env.VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!,
   );
-  const { data: subs } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")
     .limit(5000);
+  if (opts?.topic) query = query.eq("topic", opts.topic);
+  const { data: subs } = await query;
   const list = subs ?? [];
   const body = JSON.stringify(payload);
   const stale: string[] = [];
