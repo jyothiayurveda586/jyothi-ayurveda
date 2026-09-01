@@ -5,7 +5,7 @@ export async function sendPushToAll(payload: {
   body: string;
   url?: string;
   icon?: string;
-}) {
+}, opts?: { topic?: string }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const webpush = (await import("web-push")).default;
   webpush.setVapidDetails(
