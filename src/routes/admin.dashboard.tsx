@@ -964,24 +964,42 @@ function DatabaseTab() {
         <div className="overflow-auto border rounded-md max-h-[60vh]">
           <table className="text-xs w-full">
             <thead className="bg-muted sticky top-0">
-              <tr>{cols.map((c) => <th key={c} className="text-left px-2 py-1 font-medium whitespace-nowrap">{c}</th>)}</tr>
+              <tr>
+                <th className="text-left px-2 py-1 font-medium whitespace-nowrap">#</th>
+                {cols.map((c) => <th key={c} className="text-left px-2 py-1 font-medium whitespace-nowrap">{c}</th>)}
+              </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className="border-t align-top">
+                  <td className="px-2 py-1 text-muted-foreground whitespace-nowrap">{i + 1}</td>
                   {cols.map((c) => {
                     const v = r[c];
                     const s = v === null || v === undefined ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
+                    if (isUuid(s)) {
+                      return (
+                        <td key={c} className="px-2 py-1 whitespace-nowrap align-top">
+                          <span
+                            title={`${s} (click to copy)`}
+                            onClick={() => { navigator.clipboard?.writeText(s); toast.success("Full ID copied"); }}
+                            className="cursor-pointer rounded bg-muted px-1.5 py-0.5 font-mono"
+                          >
+                            {shortId(s)}
+                          </span>
+                        </td>
+                      );
+                    }
                     return <td key={c} className="px-2 py-1 whitespace-pre-wrap break-words align-top min-w-[10rem] max-w-sm">{s}</td>;
                   })}
                 </tr>
               ))}
               {!rows.length && !loading && (
-                <tr><td className="px-2 py-4 text-center text-muted-foreground" colSpan={Math.max(cols.length, 1)}>No rows</td></tr>
+                <tr><td className="px-2 py-4 text-center text-muted-foreground" colSpan={Math.max(cols.length + 1, 1)}>No rows</td></tr>
               )}
             </tbody>
           </table>
         </div>
+
       </CardContent>
     </Card>
   );
