@@ -113,10 +113,14 @@ export const notifyNewAppointment = createServerFn({ method: "POST" })
     if (!appt) return { ok: false as const };
     const doctor = (appt as any).doctors?.name ? ` with Dr. ${(appt as any).doctors.name}` : "";
     const { sendPushToAll } = await import("./push-send.server");
-    await sendPushToAll({
-      title: "📅 New appointment booked",
-      body: `${appt.patient_name}${doctor} — ${appt.appointment_date} at ${appt.appointment_time}`,
-      url: "/admin/dashboard",
-    });
-    return { ok: true as const };
+    // Only admin devices should learn about patient bookings.
+    const res = await sendPushToAll(
+      {
+        title: "📅 New appointment booked",
+        body: `${appt.patient_name}${doctor} — ${appt.appointment_date} at ${appt.appointment_time}`,
+        url: "/admin/dashboard",
+      },
+      { topic: "admin" },
+    );
+    return { ok: true as const, sent: res.sent };
   });
