@@ -72,11 +72,12 @@ async function sendToAll(payload: { title: string; body: string; url?: string; i
 // Admin: send arbitrary broadcast.
 export const adminSendPush = createServerFn({ method: "POST" })
   .middleware([attachAdminToken])
-  .inputValidator((d: { title: string; body: string; url?: string }) =>
+  .inputValidator((d: { title: string; body: string; url?: string; topic?: string }) =>
     z.object({
       title: z.string().min(1).max(120),
       body: z.string().min(1).max(500),
       url: z.string().optional(),
+      topic: z.string().max(40).optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
