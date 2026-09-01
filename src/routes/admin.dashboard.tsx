@@ -888,6 +888,10 @@ function download(name: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(s: string) { return UUID_RE.test(s); }
+function shortId(s: string) { return `#${s.slice(0, 6).toUpperCase()}`; }
+
 function DatabaseTab() {
   const listTable = useServerFn(adminListTable);
   const exportAll = useServerFn(adminExportAll);
