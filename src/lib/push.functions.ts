@@ -95,7 +95,11 @@ export const adminSendPush = createServerFn({ method: "POST" })
       .update(payload).digest("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     const A = Buffer.from(sig); const B = Buffer.from(expected);
     if (A.length !== B.length || !timingSafeEqual(A, B)) throw new Error("Unauthorized");
-    return await sendToAll({ title: data.title, body: data.body, url: data.url });
+    const { sendPushToAll } = await import("./push-send.server");
+    return await sendPushToAll(
+      { title: data.title, body: data.body, url: data.url },
+      data.topic ? { topic: data.topic } : undefined,
+    );
   });
 
 // Public: called by client right after an appointment is successfully booked.
