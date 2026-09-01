@@ -21,7 +21,8 @@ import {
   adminListNewsletters, adminSaveNewsletter, adminDeleteNewsletter, adminNotifyNewsletter,
   adminListSlides, adminSaveSlide, adminDeleteSlide, adminNotifySlide,
 } from "@/lib/content-admin.functions";
-import { adminSendPush } from "@/lib/push.functions";
+import { adminSendPush, getVapidPublicKey } from "@/lib/push.functions";
+import { subscribeToPush, isPushSupported } from "@/lib/push-client";
 import { clearAdminToken, getAdminToken } from "@/lib/admin-token";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
