@@ -1,12 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { CalendarDays } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/patient")({ component: PatientPage });
 
@@ -46,12 +51,31 @@ function PatientPage() {
 }
 
 function MyAppointments({ userId }: { userId: string }) {
+  const queryClient = useQueryClient();
+  const [cancelling, setCancelling] = useState<string | null>(null);
   const { data: appointments } = useQuery({
     queryKey: ["my-appointments", userId],
     queryFn: async () =>
       (await supabase.from("appointments").select("*, doctors(name), treatments(name)").order("appointment_date", { ascending: false })).data ?? [],
   });
   const list = appointments ?? [];
+
+  const cancelAppointment = async (id: string) => {
+    setCancelling(id);
+    const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
+    setCancelling(null);
+    if (error) {
+      toast.error("Could not cancel appointment. Please try again.");
+      return;
+    }
+    toast.success("Appointment cancelled");
+    queryClient.invalidateQueries({ queryKey: ["my-appointments", userId] });
+  };
+
+  const canCancel = (a: any) => {
+    if (a.status === "cancelled" || a.status === "completed") return false;
+    return new Date(`${a.appointment_date}T${a.appointment_time ?? "00:00"}`) >= new Date();
+  };
   return (
     <Card>
       <CardHeader>
@@ -70,7 +94,30 @@ function MyAppointments({ userId }: { userId: string }) {
                     {a.doctors?.name ?? "Any doctor"} · {a.treatments?.name ?? "Consultation"}
                   </div>
                 </div>
-                <Badge variant={a.status === "confirmed" ? "default" : a.status === "cancelled" ? "destructive" : "secondary"}>{a.status}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={a.status === "confirmed" ? "default" : a.status === "cancelled" ? "destructive" : "secondary"}>{a.status}</Badge>
+                  {canCancel(a) && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" disabled={cancelling === a.id}>
+                          {cancelling === a.id ? "Cancelling..." : "Cancel"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {a.appointment_date} at {a.appointment_time?.slice(0, 5)} with {a.doctors?.name ?? "any doctor"}. This cannot be undone — you would need to book again.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep it</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => cancelAppointment(a.id)}>Yes, cancel</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
             ))}
           </div>
