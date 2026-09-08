@@ -26,11 +26,11 @@ function Home() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-10">
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="w-full flex flex-wrap justify-center gap-1 bg-secondary/70 p-1 rounded-full">
-            <TabsTrigger value="home" className="rounded-full px-5">Home</TabsTrigger>
-            <TabsTrigger value="services" className="rounded-full px-5">Treatments & Doctors</TabsTrigger>
-            <TabsTrigger value="book" className="rounded-full px-5">Book Appointment</TabsTrigger>
-            <TabsTrigger value="contact" className="rounded-full px-5">Contact</TabsTrigger>
+          <TabsList className="w-full flex flex-wrap justify-center gap-1 border border-border/50 bg-card/70 p-1.5 rounded-full shadow-soft backdrop-blur h-auto">
+            <TabsTrigger value="home" className="rounded-full px-5 py-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft transition">Home</TabsTrigger>
+            <TabsTrigger value="services" className="rounded-full px-5 py-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft transition">Treatments & Doctors</TabsTrigger>
+            <TabsTrigger value="book" className="rounded-full px-5 py-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft transition">Book Appointment</TabsTrigger>
+            <TabsTrigger value="contact" className="rounded-full px-5 py-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft transition">Contact</TabsTrigger>
           </TabsList>
 
           <TabsContent value="home"><HomeSection onBook={() => setTab("book")} /></TabsContent>
@@ -39,7 +39,7 @@ function Home() {
           <TabsContent value="contact"><ContactSection /></TabsContent>
         </Tabs>
       </main>
-      <footer className="mt-12 border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
+      <footer className="mt-16 border-t border-border/50 py-8 text-center text-xs text-muted-foreground">
         Made with care · Ancient healing, modern care
       </footer>
     </div>
@@ -96,7 +96,7 @@ function HomeSection({ onBook }: { onBook: () => void }) {
     <div className="mt-6 space-y-8">
       <PushPrompt />
       {/* Banner carousel */}
-      <div className="relative overflow-hidden rounded-3xl aspect-[16/9] md:aspect-[16/7] shadow-sm bg-secondary/40">
+      <div className="relative overflow-hidden rounded-[2rem] aspect-[16/9] md:aspect-[16/7] shadow-elegant ring-1 ring-border/50 bg-secondary/40">
         {banners.length > 0 ? (
           <>
             {banners.map((b, i) => (
