@@ -39,13 +39,13 @@ export function SiteHeader() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border/50 bg-background/70 backdrop-blur-xl shadow-soft">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="flex min-w-0 items-center gap-2 group">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/15 transition">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-primary text-primary-foreground shadow-soft transition group-hover:scale-105">
             <Leaf className="h-5 w-5" />
           </span>
-          <span className="truncate font-serif text-base sm:text-xl font-semibold tracking-tight">{hospital?.name ?? "Ayurveda Hospital"}</span>
+          <span className="truncate font-serif text-lg sm:text-2xl font-semibold tracking-tight">{hospital?.name ?? "Ayurveda Hospital"}</span>
         </Link>
         <nav className="hidden md:flex items-center gap-1 text-sm">
           <Link to="/" className={`px-3 py-2 rounded-md transition ${isActive("/") ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}>Home</Link>
