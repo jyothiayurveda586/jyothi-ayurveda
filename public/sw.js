@@ -8,8 +8,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "Ayurveda Hospital";
   const options = {
     body: data.body || "",
-    icon: data.icon || "/favicon.ico",
-    badge: "/favicon.ico",
+    icon: data.icon || "/favicon.png",
+    badge: "/favicon.png",
     data: { url: data.url || "/" },
     tag: data.tag,
   };
