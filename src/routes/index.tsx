@@ -17,7 +17,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Leaf, Clock, IndianRupee, MapPin, Phone, Mail, User2, Sparkles, ChevronLeft, ChevronRight, MessageCircle, Instagram, Bell, Newspaper } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Jyothi Ayurveda Hospital and panchakarma centre" },
+      { name: "description", content: "Explore traditional Ayurvedic therapies and consultations with Shiva, BAMS. Open Monday–Saturday, 8:00 AM–8:00 PM." },
+      { property: "og:title", content: "Traditional Ayurveda, thoughtful care" },
+      { property: "og:description", content: "Discover Jyothi Ayurveda Hospital and panchakarma centre. Explore Ayurvedic therapies, meet Shiva, BAMS, and book an appointment." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: Home,
+});
 
 function Home() {
   const [tab, setTab] = useState("home");
@@ -33,14 +45,14 @@ function Home() {
             <TabsTrigger value="contact" className="rounded-full px-5 py-2 data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft transition">Contact</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="home"><HomeSection onBook={() => setTab("book")} /></TabsContent>
+          <TabsContent value="home"><HomeSection onBook={() => setTab("book")} onExplore={() => setTab("services")} /></TabsContent>
           <TabsContent value="services"><ServicesSection /></TabsContent>
           <TabsContent value="book"><BookSection /></TabsContent>
           <TabsContent value="contact"><ContactSection /></TabsContent>
         </Tabs>
       </main>
       <footer className="mt-16 border-t border-border/50 py-8 text-center text-xs text-muted-foreground">
-        Made with care · Ancient healing, modern care
+        Jyothi Ayurveda Hospital and panchakarma centre — dedicated to authentic traditional Ayurveda.
       </footer>
     </div>
   );
@@ -58,7 +70,7 @@ function useHospital() {
   });
 }
 
-function HomeSection({ onBook }: { onBook: () => void }) {
+function HomeSection({ onBook, onExplore }: { onBook: () => void; onExplore: () => void }) {
   const { data: h } = useHospital();
   const banners: any[] = Array.isArray((h as any)?.banners) ? (h as any).banners : [];
   const videos: any[] = Array.isArray((h as any)?.video_statuses) ? (h as any).video_statuses : [];
@@ -148,7 +160,10 @@ function HomeSection({ onBook }: { onBook: () => void }) {
       {/* Video statuses (WhatsApp-style carousel) */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-serif text-2xl">Latest updates</h3>
+          <div>
+            <h3 className="font-serif text-2xl">The latest from us</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Stay connected with the latest hospital updates.</p>
+          </div>
           {videos.length > 4 && (
             <div className="flex gap-2">
               <button onClick={prevVideo} aria-label="Previous update"
@@ -204,7 +219,10 @@ function HomeSection({ onBook }: { onBook: () => void }) {
       {/* Admin slides */}
       {slides && slides.length > 0 && (
         <section>
-          <h3 className="font-serif text-2xl mb-3">Announcements</h3>
+          <div className="mb-3">
+            <h3 className="font-serif text-2xl">Hospital notices and announcements</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Find hospital announcements in one place.</p>
+          </div>
           <div className="relative overflow-hidden rounded-2xl aspect-[16/8] md:aspect-[16/6] bg-secondary/40">
             {slides.map((s: any, i: number) => (
               <a
@@ -237,9 +255,12 @@ function HomeSection({ onBook }: { onBook: () => void }) {
       {/* Newsletters */}
       {newsletters && newsletters.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <Newspaper className="h-5 w-5 text-primary" />
-            <h3 className="font-serif text-2xl">Newsletter</h3>
+          <div className="mb-3">
+            <div className="flex items-center gap-2">
+              <Newspaper className="h-5 w-5 text-primary" />
+              <h3 className="font-serif text-2xl">The hospital newsletter</h3>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">Read wellness notes and stories from our hospital.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {newsletters.map((n: any) => (
@@ -268,18 +289,16 @@ function HomeSection({ onBook }: { onBook: () => void }) {
       <section className="rounded-3xl bg-hero-leaf p-8 md:p-14 shadow-sm">
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
-            <Sparkles className="h-3.5 w-3.5" /> Classical Ayurveda since generations
+            <Sparkles className="h-3.5 w-3.5" /> Rooted in traditional Ayurveda
           </div>
           <h1 className="mt-4 font-serif text-4xl md:text-6xl font-semibold leading-[1.05]">
             {h?.name ?? "Ayurveda Hospital"}
           </h1>
           <p className="mt-3 text-lg text-muted-foreground italic">{h?.tagline ?? "Ancient healing, modern care"}</p>
-          <p className="mt-6 text-base md:text-lg leading-relaxed text-foreground/80">
-            {h?.about ?? "Welcome to our Ayurveda hospital, dedicated to authentic traditional healing."}
-          </p>
+          <p className="mt-6 text-base md:text-lg leading-relaxed text-foreground/80">Discover authentic Ayurvedic care, traditional therapies and one-on-one consultations.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button size="lg" onClick={onBook}>Book an appointment</Button>
-            <Link to="/patient"><Button size="lg" variant="outline">Patient login</Button></Link>
+            <Button size="lg" variant="outline" onClick={onExplore}>Explore treatments</Button>
           </div>
         </div>
       </section>
@@ -287,7 +306,10 @@ function HomeSection({ onBook }: { onBook: () => void }) {
       {/* Contact preview on home */}
       <section className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="font-serif text-2xl">Reach us</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="font-serif text-2xl">Let’s connect</CardTitle>
+            <CardDescription>Contact us, reach out on WhatsApp or find us on Google Maps.</CardDescription>
+          </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {h?.address && <p className="inline-flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary" /><span>{h.address}</span></p>}
             {h?.phone && <p className="inline-flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 text-primary" /><a href={`tel:${h.phone}`} className="hover:underline">{h.phone}</a></p>}
@@ -365,7 +387,10 @@ function ServicesSection() {
   return (
     <div className="mt-8 space-y-10">
       <section>
-        <h2 className="font-serif text-3xl mb-4">Treatments</h2>
+        <div className="mb-4">
+          <h2 className="font-serif text-3xl">Explore traditional Ayurvedic therapies</h2>
+          <p className="mt-2 text-muted-foreground">Browse Panchakarma, Shirodhara, Abhyanga, Kizhi and Nasya, alongside one-on-one Ayurvedic consultations.</p>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {treatments?.map((t) => (
             <Card key={t.id} className="border-border/60">
@@ -386,7 +411,10 @@ function ServicesSection() {
         </div>
       </section>
       <section>
-        <h2 className="font-serif text-3xl mb-4">Our Doctors</h2>
+        <div className="mb-4">
+          <h2 className="font-serif text-3xl">Meet your Ayurvedic physician</h2>
+          <p className="mt-2 text-muted-foreground">Consult Shiva, BAMS, for one-on-one Ayurvedic guidance.</p>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           {doctors?.map((d) => (
             <Card key={d.id} className="border-border/60">
@@ -502,9 +530,9 @@ function BookSection() {
     return (
       <div className="mt-10 mx-auto max-w-md text-center rounded-2xl border border-border/60 bg-card p-8">
         <Leaf className="mx-auto h-10 w-10 text-primary" />
-        <h2 className="mt-3 font-serif text-2xl">Sign in to book</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Patients sign in with Google to book appointments and view their visit history.</p>
-        <Button className="mt-6" onClick={() => navigate({ to: "/auth" })}>Sign in with Google</Button>
+        <h2 className="mt-3 font-serif text-2xl">Your patient sign-in</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Sign in to your patient account to request an appointment.</p>
+        <Button className="mt-6" onClick={() => navigate({ to: "/auth" })}>Patient sign-in</Button>
       </div>
     );
   }
@@ -535,7 +563,10 @@ function BookSection() {
 
   return (
     <form onSubmit={submit} className="mt-8 mx-auto max-w-2xl rounded-2xl border border-border/60 bg-card p-6 md:p-8 space-y-4">
-      <h2 className="font-serif text-3xl">Book an Appointment</h2>
+      <div>
+        <h2 className="font-serif text-3xl">Make time for your care</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Book your appointment. We’re open Monday–Saturday, 8:00 AM–8:00 PM.</p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div><Label>Patient name *</Label><Input value={form.patient_name} onChange={(e) => setForm({ ...form, patient_name: e.target.value })} required /></div>
         <div><Label>Phone *</Label><Input value={form.patient_phone} onChange={(e) => setForm({ ...form, patient_phone: e.target.value })} required /></div>
@@ -583,7 +614,7 @@ function BookSection() {
       </div>
       <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Symptoms, concerns…" /></div>
       <Button type="submit" size="lg" className="w-full" disabled={saving}>
-        {saving ? "Booking…" : "Request appointment"}
+        {saving ? "Booking…" : "Book an appointment"}
       </Button>
     </form>
   );
